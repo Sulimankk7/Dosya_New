@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌞 Light Mode */
+:root {
+  --bg: #ffffff;
+  --card: #f8fafc;
+  --text: #0f172a;
+  --primary: #22c55e;
+}
+
+/* 🌙 Dark Mode */
+.dark {
+  --bg: #020617;
+  --card: #020617;
+  --text: #f8fafc;
+  --primary: #22c55e;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
