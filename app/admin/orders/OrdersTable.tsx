@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import OrderDrawer from "./OrderDrawer";
-
-type Status = {
-  statusID: number;
-  statusName: string;
-};
+import type { OrderStatus } from "@/lib/database.types";
 
 function getStatusClassById(statusId: number) {
   switch (statusId) {
@@ -26,7 +24,7 @@ type OrdersTableProps = {
     statusId: number | null;
     universityId: number | null;
   };
-  statuses: Status[];
+  statuses: OrderStatus[];
 };
 
 type Order = {
@@ -46,6 +44,9 @@ export default function OrdersTable({
   filters,
   statuses,
 }: OrdersTableProps) {
+  const supabase = createClient();
+  const router = useRouter();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -61,24 +62,55 @@ export default function OrdersTable({
       setCurrentPage(1); // reset pagination on filter
 
       try {
-        const params = new URLSearchParams();
-        if (filters.statusId !== null)
-          params.append("statusId", String(filters.statusId));
-        if (filters.universityId !== null)
-          params.append("universityId", String(filters.universityId));
-
-        const res = await fetch(
-          `http://localhost:5217/api/admin/orders?${params}`,
-          { credentials: "include" }
-        );
-
-        if (res.status === 401) {
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           setUnauthorized(true);
+          router.push("/admin/login");
           return;
         }
 
-        const data = await res.json();
-        setOrders(data.items);
+        // Build query with joins
+        let query = supabase
+          .from("Orders")
+          .select(`
+            OrderID,
+            Quantity,
+            StatusID,
+            Students!inner(FullName, PhoneNumber),
+            Universities!inner(UniversityName),
+            Courses!inner(CourseName),
+            OrderStatuses!inner(StatusName)
+          `)
+          .order("OrderID", { ascending: false });
+
+        if (filters.statusId !== null) {
+          query = query.eq("StatusID", filters.statusId);
+        }
+        if (filters.universityId !== null) {
+          query = query.eq("UniversityID", filters.universityId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Failed to fetch orders", error);
+          return;
+        }
+
+        // Transform data to match expected format
+        const transformedOrders: Order[] = (data || []).map((order: any) => ({
+          orderID: order.OrderID,
+          studentName: order.Students?.FullName || "",
+          phoneNumber: order.Students?.PhoneNumber || "",
+          university: order.Universities?.UniversityName || "",
+          course: order.Courses?.CourseName || "",
+          status: order.OrderStatuses?.StatusName || "",
+          statusID: order.StatusID,
+          quantity: order.Quantity,
+        }));
+
+        setOrders(transformedOrders);
       } catch (err) {
         console.error(err);
       } finally {
@@ -195,10 +227,9 @@ export default function OrdersTable({
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`px-4 py-2 rounded-lg text-sm
-                  ${
-                    currentPage === page
-                      ? "bg-green-500 text-black"
-                      : "border border-white/10 hover:bg-white/5"
+                  ${currentPage === page
+                    ? "bg-green-500 text-black"
+                    : "border border-white/10 hover:bg-white/5"
                   }`}
               >
                 {page}

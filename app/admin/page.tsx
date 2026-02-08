@@ -1,11 +1,11 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export default function AdminPage() {
-  const cookieStore = cookies();
-  const adminToken = cookieStore.get("admin-token");
+export default async function AdminPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!adminToken) {
+  if (!user) {
     redirect("/admin/login");
   }
 

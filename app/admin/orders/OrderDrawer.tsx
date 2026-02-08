@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { createClient } from "@/lib/supabase/client";
+import type { OrderStatus } from "@/lib/database.types";
 
-type OrderDrawerProps = {
-  order: any;
-  statuses: {
-    statusID: number;
-    statusName: string;
-  }[];
+type Order = {
+  orderID: number;
+  studentName: string;
+  phoneNumber: string;
+  university: string;
+  course: string;
+  status: string;
+  statusID: number;
+  quantity: number;
+};
+
+type Props = {
+  order: Order;
+  statuses: OrderStatus[];
   onClose: () => void;
   onStatusUpdated: (statusId: number, statusName: string) => void;
 };
@@ -18,127 +27,102 @@ export default function OrderDrawer({
   statuses,
   onClose,
   onStatusUpdated,
-}: OrderDrawerProps) {
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const message = `السلام عليكم ${order.studentName}
-بخصوص طلب الدوسية رقم (${order.orderID})
-
-- المادة: ${order.course}
-- الجامعة: ${order.university}
-- الكمية: ${order.quantity}
-
-نحن جاهزون لأي استفسار`;
-
-  const whatsappLink = `https://wa.me/962${order.phoneNumber.substring(
-    1
-  )}?text=${encodeURIComponent(message)}`;
+}: Props) {
+  const supabase = createClient();
+  const [updating, setUpdating] = useState(false);
 
   const updateStatus = async (statusId: number) => {
-    try {
-      setIsUpdating(true);
+    setUpdating(true);
 
-      const res = await fetch(
-        `http://localhost:5217/api/admin/orders/${order.orderID}/status`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ statusID: statusId }),
-        }
-      );
+    const { error } = await supabase
+      .from("Orders")
+      .update({ StatusID: statusId })
+      .eq("OrderID", order.orderID);
 
-      if (res.status === 401) {
-        window.location.href = "/admin/login";
-        return;
-      }
-
-      if (!res.ok) throw new Error();
-
-      const statusName =
-        statuses.find((s) => s.statusID === statusId)?.statusName || "";
-
+    if (error) {
+      console.error("Failed to update status", error);
+      alert("فشل تحديث الحالة");
+    } else {
+      const statusName = statuses.find((s) => s.StatusID === statusId)?.StatusName || "";
       onStatusUpdated(statusId, statusName);
-      toast.success("تم تحديث حالة الطلب");
-    } catch {
-      toast.error("حدث خطأ أثناء تحديث الحالة");
-    } finally {
-      setIsUpdating(false);
+      onClose();
     }
+
+    setUpdating(false);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      {/* Overlay */}
-      <div onClick={onClose} className="flex-1 bg-black/60" />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-[#0B1220] rounded-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          aria-label="Close"
+        >
+          ✕
+        </button>
 
-      {/* Drawer */}
-      <div
-        className="w-full sm:w-[380px]
-                   bg-[#0B1220]
-                   border-l border-white/10
-                   p-5 text-white
-                   animate-slide-in overflow-y-auto"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">تفاصيل الطلب</h2>
-          <button
-            onClick={onClose}
-            className="text-white/60 hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
+        <h2 className="text-xl font-bold mb-6 text-right text-gray-900 dark:text-white">
+          تفاصيل الطلب #{order.orderID}
+        </h2>
 
-        <div className="space-y-4 text-sm">
-          <Info label="رقم الطلب" value={order.orderID} />
-          <Info label="الاسم" value={order.studentName} />
-          <Info label="رقم الهاتف" value={order.phoneNumber} />
-          <Info label="الجامعة" value={order.university} />
-          <Info label="المادة" value={order.course} />
-          <Info label="الكمية" value={order.quantity} />
-          <Info label="الحالة الحالية" value={order.status} />
+        <div className="space-y-4 text-right text-gray-700 dark:text-gray-300">
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">الاسم</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.studentName}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">الهاتف</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.phoneNumber}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">الجامعة</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.university}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">المادة</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.course}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">الكمية</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.quantity}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
+            <span className="text-gray-500">الحالة الحالية</span>
+            <span className="font-medium text-gray-900 dark:text-white">{order.status}</span>
+          </div>
         </div>
 
         <div className="mt-6">
-          <label className="block mb-2 text-sm">تغيير الحالة</label>
-          <select
-            defaultValue={order.statusID}
-            disabled={isUpdating}
-            onChange={(e) => updateStatus(Number(e.target.value))}
-            className="w-full bg-[#050A18] border border-white/10 rounded-lg px-3 py-2"
-          >
+          <h3 className="text-sm font-semibold mb-3 text-right text-gray-700 dark:text-gray-300">
+            تغيير الحالة
+          </h3>
+
+          <div className="flex flex-wrap gap-2 justify-end">
             {statuses.map((status) => (
-              <option key={status.statusID} value={status.statusID}>
-                {status.statusName}
-              </option>
+              <button
+                key={status.StatusID}
+                disabled={updating || status.StatusID === order.statusID}
+                onClick={() => updateStatus(status.StatusID)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition
+                  ${status.StatusID === order.statusID
+                    ? "bg-green-500 text-white cursor-default"
+                    : "bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-900 dark:text-white"
+                  }
+                  disabled:opacity-50
+                `}
+              >
+                {status.StatusName}
+              </button>
             ))}
-          </select>
-
-          {isUpdating && (
-            <p className="mt-2 text-xs text-white/50">
-              جارٍ تحديث الحالة...
-            </p>
-          )}
+          </div>
         </div>
-
-        <a
-          href={whatsappLink}
-          target="_blank"
-          className="block mt-6 text-center bg-green-500 hover:bg-green-600 text-black font-semibold py-3 rounded-lg"
-        >
-          التواصل عبر واتساب
-        </a>
       </div>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: any }) {
-  return (
-    <div className="flex justify-between border-b border-white/10 pb-2">
-      <span className="text-white/60">{label}</span>
-      <span>{value}</span>
     </div>
   );
 }

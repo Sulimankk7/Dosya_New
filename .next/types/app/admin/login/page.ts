@@ -1,4 +1,4 @@
-// File: D:\Dossier project\app\admin\login\page.tsx
+// File: C:\Users\ASUS\OneDrive\المستندات\GitHub\Dosya_New\app\admin\login\page.tsx
 import * as entry from '../../../../../app/admin/login/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

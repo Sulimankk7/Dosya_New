@@ -1,173 +1,121 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const supabase = createClient();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.replace('/admin/orders');
+      }
+    };
+    checkSession();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (loading) return;
 
-    setError("");
     setLoading(true);
+    setError('');
 
     try {
-      const res = await fetch(
-        "http://localhost:5217/api/admin/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            username: username.trim(),
-            password: password.trim(),
-          }),
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (authError) {
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        } else {
+          setError('حدث خطأ، حاول مرة أخرى');
         }
-      );
-
-      if (res.status === 401) {
-        throw new Error("INVALID_CREDENTIALS");
+        return;
       }
 
-      if (!res.ok) {
-        throw new Error("SERVER_ERROR");
-      }
-
-      router.push("/admin/orders");
-    } catch (err: any) {
-      if (err.message === "INVALID_CREDENTIALS") {
-        setError("بيانات الدخول غير صحيحة");
-      } else {
-        setError("حصل خطأ غير متوقع، حاول مرة أخرى");
-      }
-
-      await new Promise((r) => setTimeout(r, 800));
+      router.replace('/admin/orders');
+    } catch {
+      setError('حدث خطأ، حاول مرة أخرى');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-[#020617] flex flex-col items-center justify-center px-4">
-      {/* Icon */}
-      <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-        <svg
-          className="w-8 h-8 text-white"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5.5 21a6.5 6.5 0 0113 0"
-          />
-        </svg>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#070B16] to-[#020617] px-4">
+      <div className="w-full max-w-md bg-white dark:bg-[#0B1220] rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-block">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              الدوسية
+            </h1>
+          </Link>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
+            تسجيل دخول الأدمن
+          </p>
+        </div>
 
-      {/* Title */}
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-        Dossier Admin
-      </h1>
-      <p className="text-gray-500 dark:text-gray-400 mb-8">
-        لوحة التحكم الإدارية
-      </p>
-
-      {/* Card */}
-      <div className="w-full max-w-md bg-white dark:bg-[#0B1220] rounded-2xl shadow-xl p-6 sm:p-8">
         <form onSubmit={handleLogin} className="space-y-5">
-          {/* Username */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-right text-gray-700 dark:text-gray-300">
-              اسم المستخدم
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
+              البريد الإلكتروني
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="أدخل اسم المستخدم"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="off"
-                className="w-full border border-gray-300 dark:border-white/10
-                           bg-white dark:bg-[#020617]
-                           text-gray-900 dark:text-white
-                           rounded-lg px-4 py-2 pr-10
-                           focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center text-gray-400">
-                👤
-              </span>
-            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="admin@example.com"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-[#020617] text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+            />
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-right text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
               كلمة المرور
             </label>
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="أدخل كلمة المرور"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                onCopy={(e) => e.preventDefault()}
-                className="w-full border border-gray-300 dark:border-white/10
-                           bg-white dark:bg-[#020617]
-                           text-gray-900 dark:text-white
-                           rounded-lg px-4 py-2 pr-10
-                           focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center text-gray-400">
-                🔒
-              </span>
-            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-[#020617] text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+            />
           </div>
 
-          {/* Error */}
           {error && (
-            <p className="text-red-500 text-sm text-center">
-              {error}
-            </p>
+            <p className="text-red-500 text-sm text-center">{error}</p>
           )}
 
-          {/* Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full font-semibold py-2 rounded-lg transition
-              ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-500 hover:bg-green-600 text-white"
-              }`}
+            className={`w-full py-3 rounded-xl font-semibold transition
+              ${loading
+                ? 'bg-gray-400 cursor-not-allowed text-white'
+                : 'bg-green-500 text-white hover:bg-green-600'
+              }
+            `}
           >
-            {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+            {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
       </div>
-
-      {/* Footer */}
-      <p className="mt-8 text-sm text-gray-400">
-        © Dosya 2026 - لوحة التحكم الإدارية
-      </p>
     </div>
   );
 }

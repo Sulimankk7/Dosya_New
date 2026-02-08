@@ -2,23 +2,271 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🌞 Light Mode */
+/* Google Fonts - Arabic */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   Dosya Design System - Claymorphism Style
+   Colors: Teal + Orange CTA
+   ============================================ */
+
 :root {
-  --bg: #ffffff;
-  --card: #f8fafc;
-  --text: #0f172a;
-  --primary: #22c55e;
+  /* Brand Colors */
+  --primary: #0D9488;
+  --primary-light: #14B8A6;
+  --primary-dark: #0F766E;
+  --secondary: #2DD4BF;
+  --cta: #F97316;
+  --cta-hover: #EA580C;
+
+  /* Background & Surface */
+  --bg: #F0FDFA;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+
+  /* Text Colors */
+  --text: #134E4A;
+  --text-muted: #475569;
+  --text-light: #64748B;
+
+  /* Claymorphism Shadows */
+  --shadow-clay:
+    6px 6px 12px rgba(0, 0, 0, 0.08),
+    -6px -6px 12px rgba(255, 255, 255, 0.9),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+  --shadow-clay-hover:
+    8px 8px 16px rgba(0, 0, 0, 0.1),
+    -8px -8px 16px rgba(255, 255, 255, 0.95),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+  --shadow-clay-pressed:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.1),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+
+  /* Border Radius */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow: 300ms ease-out;
 }
 
-/* 🌙 Dark Mode */
+/* Dark Mode (Optional - Claymorphism works best in light) */
 .dark {
-  --bg: #020617;
-  --card: #020617;
-  --text: #f8fafc;
-  --primary: #22c55e;
+  --bg: #0F172A;
+  --bg-card: #1E293B;
+  --bg-elevated: #334155;
+  --text: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-light: #CBD5E1;
+  --shadow-clay:
+    6px 6px 12px rgba(0, 0, 0, 0.3),
+    -6px -6px 12px rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+* {
+  font-family: 'Noto Sans Arabic', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth page transitions */
+main {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth link transitions */
+a {
+  transition: all 0.2s ease;
+}
+
+/* Button hover animation */
+button,
+.clay-btn,
+.clay-btn-primary,
+.clay-btn-cta {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active,
+.clay-btn:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   Claymorphism Components
+   ============================================ */
+
+/* Clay Card */
+.clay-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-clay);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transition: all var(--transition-normal);
+}
+
+.clay-card:hover {
+  box-shadow: var(--shadow-clay-hover);
+  transform: translateY(-2px);
+}
+
+/* Clay Button - Primary */
+.clay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: none;
+}
+
+.clay-btn-primary {
+  background: linear-gradient(145deg, var(--primary-light), var(--primary));
+  color: white;
+  box-shadow:
+    4px 4px 8px rgba(13, 148, 136, 0.3),
+    -2px -2px 6px rgba(255, 255, 255, 0.2),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.clay-btn-primary:hover {
+  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
+  transform: translateY(-2px);
+  box-shadow:
+    6px 6px 12px rgba(13, 148, 136, 0.4),
+    -3px -3px 8px rgba(255, 255, 255, 0.3);
+}
+
+.clay-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-clay-pressed);
+}
+
+/* CTA Button - Orange */
+.clay-btn-cta {
+  background: linear-gradient(145deg, #FB923C, var(--cta));
+  color: white;
+  box-shadow:
+    4px 4px 8px rgba(249, 115, 22, 0.3),
+    -2px -2px 6px rgba(255, 255, 255, 0.2),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.clay-btn-cta:hover {
+  background: linear-gradient(145deg, var(--cta), var(--cta-hover));
+  transform: translateY(-2px);
+}
+
+/* Clay Input */
+.clay-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 2px solid rgba(13, 148, 136, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 16px;
+  transition: all var(--transition-normal);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+}
+
+.clay-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.7),
+    0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.clay-input::placeholder {
+  color: var(--text-light);
+}
+
+/* Clay Select */
+.clay-select {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 2px solid rgba(13, 148, 136, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230D9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  background-size: 20px;
+}
+
+.clay-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Utility Classes */
+.text-primary {
+  color: var(--primary);
+}
+
+.text-cta {
+  color: var(--cta);
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.bg-cta {
+  background-color: var(--cta);
+}
+
+/* Responsive Motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

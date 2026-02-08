@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import AdminNavbar from "../components/AdminNavbar";
 import FiltersBar from "./FiltersBar";
 import OrdersTable from "./OrdersTable";
+import type { OrderStatus, University } from "@/lib/database.types";
 
 export default function AdminOrdersPage() {
+  const supabase = createClient();
+
   // ===============================
   // States
   // ===============================
-  const [statuses, setStatuses] = useState<any[]>([]);
-  const [universities, setUniversities] = useState<any[]>([]);
+  const [statuses, setStatuses] = useState<OrderStatus[]>([]);
+  const [universities, setUniversities] = useState<University[]>([]);
   const [filters, setFilters] = useState<{
     statusId: number | null;
     universityId: number | null;
@@ -20,56 +24,40 @@ export default function AdminOrdersPage() {
   });
 
   // ===============================
-  // Fetch order statuses (ADMIN)
+  // Fetch order statuses from Supabase
   // ===============================
   useEffect(() => {
     const fetchStatuses = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:5217/api/admin/order-statuses",
-          {
-            credentials: "include",
-          }
-        );
+      const { data, error } = await supabase
+        .from("OrderStatuses")
+        .select("*");
 
-        if (!res.ok) {
-          console.error("Failed to fetch statuses");
-          return;
-        }
-
-        const data = await res.json();
-        setStatuses(data);
-      } catch (error) {
+      if (error) {
         console.error("Failed to fetch statuses", error);
+        return;
       }
+
+      setStatuses(data || []);
     };
 
     fetchStatuses();
   }, []);
 
   // ===============================
-  // Fetch universities (PUBLIC)
+  // Fetch universities from Supabase
   // ===============================
   useEffect(() => {
     const fetchUniversities = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:5217/api/universities",
-          {
-            credentials: "include",
-          }
-        );
+      const { data, error } = await supabase
+        .from("Universities")
+        .select("*");
 
-        if (!res.ok) {
-          console.error("Failed to fetch universities");
-          return;
-        }
-
-        const data = await res.json();
-        setUniversities(data);
-      } catch (error) {
+      if (error) {
         console.error("Failed to fetch universities", error);
+        return;
       }
+
+      setUniversities(data || []);
     };
 
     fetchUniversities();
