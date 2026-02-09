@@ -132,7 +132,15 @@ function OrderForm() {
   const selectedCourse = courses.find((c) => c.CourseID === Number(courseId));
 
   const coursePrice = selectedCourse?.Price ?? 0;
-  const deliveryFee = selectedUniversity?.DeliveryFee ?? 0;
+  const deliveryFee = (() => {
+    const id = selectedUniversity?.UniversityID;
+
+    if (id === 9) return 0; // ????? ?????
+    if (id === 10) return 2; // ????? ????? ???????
+    if (id === 11) return 1; // ????? ???? ???????
+
+    return selectedUniversity?.DeliveryFee ?? 0;
+  })();
   const total = coursePrice * quantity + deliveryFee;
 
   /* =====================================================
@@ -350,3 +358,4 @@ export default function OrderPage() {
     </Suspense>
   );
 }
+
