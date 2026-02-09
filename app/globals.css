@@ -228,3 +228,26 @@ button:active,
     transition-duration: 0.01ms !important;
   }
 }
+/* =========================
+   Fixed Navbar & Footer Color
+   ========================= */
+
+/* Navbar */
+nav,
+.navbar,
+header {
+  background-color: #050914 !important;
+}
+
+/* Footer */
+footer,
+.footer {
+  background-color: #050914 !important;
+}
+
+/* Text inside navbar & footer */
+nav *,
+header *,
+footer * {
+  color: #ffffff;
+}
