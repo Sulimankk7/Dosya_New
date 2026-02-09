@@ -22,8 +22,7 @@ export default function Hero() {
                      text-white text-lg font-medium 
                      hover:opacity-90 transition"
         >
-          اطلب الدوسية
-        </Link>
+أطلب دوسية        </Link>
 
         {/* Scroll */}
         <a
@@ -32,8 +31,7 @@ export default function Hero() {
                      text-gray-700 dark:text-white 
                      hover:bg-gray-50 dark:hover:bg-white/10 transition"
         >
-          شوف المحتوى
-        </a>
+الدوسيات المتاحه        </a>
       </div>
 
       <div className="mt-20 flex justify-center">

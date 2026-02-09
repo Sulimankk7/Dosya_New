@@ -7,20 +7,22 @@
 
 /* ============================================
    Dosya Design System - Claymorphism Style
-   Colors: Teal + Orange CTA
+   Colors: Green CTA (Unified)
    ============================================ */
 
 :root {
-  /* Brand Colors */
-  --primary: #050914;
-  --primary-light: #111827;
-  --primary-dark: #020617;
+  /* Brand Colors (UNIFIED GREEN) */
+  --primary: #10B956;
+  --primary-light: #22c55e;
+  --primary-dark: #0fa24c;
   --secondary: #1E293B;
-  --cta: #F97316;
-  --cta-hover: #EA580C;
 
-  /* Background & Surface */
-  --bg: #F0FDFA;
+  /* CTA */
+  --cta: #10B956;
+  --cta-hover: #0fa24c;
+
+  /* Background & Surface (PURE WHITE) */
+  --bg: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #FFFFFF;
 
@@ -54,14 +56,20 @@
   --transition-slow: 300ms ease-out;
 }
 
-/* Dark Mode (Optional - Claymorphism works best in light) */
+/* Dark Mode (KEEP GREEN CTA) */
 .dark {
   --bg: #0F172A;
   --bg-card: #1E293B;
   --bg-elevated: #334155;
+
   --text: #F8FAFC;
   --text-muted: #94A3B8;
   --text-light: #CBD5E1;
+
+  --primary: #10B956;
+  --cta: #10B956;
+  --cta-hover: #0fa24c;
+
   --shadow-clay:
     6px 6px 12px rgba(0, 0, 0, 0.3),
     -6px -6px 12px rgba(255, 255, 255, 0.05);
@@ -70,6 +78,7 @@
 /* ============================================
    Base Styles
    ============================================ */
+
 * {
   font-family: 'Noto Sans Arabic', sans-serif;
 }
@@ -85,7 +94,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Smooth page transitions */
 main {
   animation: fadeIn 0.4s ease-out;
 }
@@ -95,19 +103,16 @@ main {
     opacity: 0;
     transform: translateY(10px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* Smooth link transitions */
 a {
   transition: all 0.2s ease;
 }
 
-/* Button hover animation */
 button,
 .clay-btn,
 .clay-btn-primary,
@@ -124,7 +129,6 @@ button:active,
    Claymorphism Components
    ============================================ */
 
-/* Clay Card */
 .clay-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
@@ -138,7 +142,7 @@ button:active,
   transform: translateY(-2px);
 }
 
-/* Clay Button - Primary */
+/* Clay Button */
 .clay-btn {
   display: inline-flex;
   align-items: center;
@@ -147,15 +151,15 @@ button:active,
   font-weight: 600;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-normal);
   border: none;
 }
 
+/* Primary Button (GREEN) */
 .clay-btn-primary {
   background: linear-gradient(145deg, var(--primary-light), var(--primary));
   color: white;
   box-shadow:
-    4px 4px 8px rgba(13, 148, 136, 0.3),
+    4px 4px 8px rgba(16, 185, 86, 0.3),
     -2px -2px 6px rgba(255, 255, 255, 0.2),
     inset 1px 1px 2px rgba(255, 255, 255, 0.3);
 }
@@ -163,9 +167,6 @@ button:active,
 .clay-btn-primary:hover {
   background: linear-gradient(145deg, var(--primary), var(--primary-dark));
   transform: translateY(-2px);
-  box-shadow:
-    6px 6px 12px rgba(13, 148, 136, 0.4),
-    -3px -3px 8px rgba(255, 255, 255, 0.3);
 }
 
 .clay-btn-primary:active {
@@ -173,12 +174,12 @@ button:active,
   box-shadow: var(--shadow-clay-pressed);
 }
 
-/* CTA Button - Orange */
+/* CTA Button (GREEN) */
 .clay-btn-cta {
-  background: linear-gradient(145deg, #FB923C, var(--cta));
+  background: linear-gradient(145deg, #22c55e, var(--cta));
   color: white;
   box-shadow:
-    4px 4px 8px rgba(249, 115, 22, 0.3),
+    4px 4px 8px rgba(16, 185, 86, 0.3),
     -2px -2px 6px rgba(255, 255, 255, 0.2),
     inset 1px 1px 2px rgba(255, 255, 255, 0.3);
 }
@@ -188,61 +189,20 @@ button:active,
   transform: translateY(-2px);
 }
 
-/* Clay Input */
-.clay-input {
-  width: 100%;
-  padding: 14px 18px;
-  background: var(--bg);
-  border: 2px solid rgba(13, 148, 136, 0.2);
-  border-radius: var(--radius-md);
-  color: var(--text);
-  font-size: 16px;
-  transition: all var(--transition-normal);
-  box-shadow:
-    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-}
-
-.clay-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow:
-    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.7),
-    0 0 0 3px rgba(13, 148, 136, 0.15);
-}
-
-.clay-input::placeholder {
-  color: var(--text-light);
-}
-
-/* Clay Select */
+/* Inputs */
+.clay-input,
 .clay-select {
   width: 100%;
   padding: 14px 18px;
   background: var(--bg);
-  border: 2px solid rgba(13, 148, 136, 0.2);
+  border: 2px solid rgba(16, 185, 86, 0.25);
   border-radius: var(--radius-md);
   color: var(--text);
   font-size: 16px;
-  cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow:
-    inset 3px 3px 6px rgba(0, 0, 0, 0.05),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230D9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left 12px center;
-  background-size: 20px;
 }
 
-.clay-select:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-/* Utility Classes */
+/* Utility */
 .text-primary {
   color: var(--primary);
 }
@@ -259,14 +219,12 @@ button:active,
   background-color: var(--cta);
 }
 
-/* Responsive Motion */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
