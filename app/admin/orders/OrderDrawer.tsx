@@ -77,7 +77,16 @@ export default function OrderDrawer({
             <div className="flex items-center gap-3">
               <span className="font-medium text-gray-900 dark:text-white">{order.phoneNumber}</span>
               <a
-                href={`https://wa.me/${order.phoneNumber.replace(/\D/g, '')}`}
+                href={`https://wa.me/${order.phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(
+                  `السلام عليكم ${order.studentName}
+بخصوص طلب الدوسية رقم (${order.orderID})
+
+- المادة: ${order.course}
+- الجامعة: ${order.university}
+- الكمية: ${order.quantity}
+
+نحن جاهزون لأي استفسار`
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-[#10B956] text-white rounded-full hover:bg-[#0e9d49] transition-colors"
