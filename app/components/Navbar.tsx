@@ -55,14 +55,14 @@ export default function Navbar() {
             </Link>
           </li>
           <li>
-            <a href="#feedback" className="hover:text-white transition-colors cursor-pointer py-2">
+            <Link href="/#feedback" className="hover:text-white transition-colors cursor-pointer py-2">
               آراء الطلاب
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#about" className="hover:text-white transition-colors cursor-pointer py-2">
+            <Link href="/#about" className="hover:text-white transition-colors cursor-pointer py-2">
               من نحن
-            </a>
+            </Link>
           </li>
         </ul>
 
@@ -119,21 +119,21 @@ export default function Navbar() {
             اطلب الآن
           </Link>
 
-          <a
-            href="#feedback"
+          <Link
+            href="/#feedback"
             onClick={() => setOpen(false)}
             className="block py-3 px-4 rounded-lg hover:bg-white/10 text-white transition-colors cursor-pointer"
           >
             آراء الطلاب
-          </a>
+          </Link>
 
-          <a
-            href="#about"
+          <Link
+            href="/#about"
             onClick={() => setOpen(false)}
             className="block py-3 px-4 rounded-lg hover:bg-white/10 text-white transition-colors cursor-pointer"
           >
             من نحن
-          </a>
+          </Link>
 
           <Link
             href="/order"
