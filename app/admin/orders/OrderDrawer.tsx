@@ -6,13 +6,14 @@ import type { OrderStatus } from "@/lib/database.types";
 
 type Order = {
   orderID: number;
+  orderIDs: number[];
   studentName: string;
   phoneNumber: string;
   university: string;
-  course: string;
+  courses: string[];
   status: string;
   statusID: number;
-  quantity: number;
+  quantities: number[];
 };
 
 type Props = {
@@ -37,7 +38,7 @@ export default function OrderDrawer({
     const { error } = await supabase
       .from("Orders")
       .update({ StatusID: statusId })
-      .eq("OrderID", order.orderID);
+      .in("OrderID", order.orderIDs);
 
     if (error) {
       console.error("Failed to update status", error);
@@ -63,13 +64,16 @@ export default function OrderDrawer({
     return cleaned;
   })();
 
+  const itemsLines = order.courses
+    .map((course, idx) => `- ${course}: ${order.quantities[idx] ?? 0}`)
+    .join("\n");
+
   const whatsappMessage = encodeURIComponent(
     `السلام عليكم ${order.studentName}
 بخصوص طلب الدوسية رقم (${order.orderID})
 
-- المادة: ${order.course}
+${itemsLines}
 - الجامعة: ${order.university}
-- الكمية: ${order.quantity}
 
 نحن جاهزون لأي استفسار`
   );
@@ -135,14 +139,26 @@ export default function OrderDrawer({
           <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
             <span className="text-gray-500">المادة</span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {order.course}
+              <span className="block space-y-1 text-right">
+                {order.courses.map((course, idx) => (
+                  <span key={`${order.orderID}-dc-${idx}`} className="block">
+                    {course}
+                  </span>
+                ))}
+              </span>
             </span>
           </div>
 
           <div className="flex justify-between border-b border-gray-200 dark:border-white/10 pb-2">
             <span className="text-gray-500">الكمية</span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {order.quantity}
+              <span className="block space-y-1 text-right">
+                {order.quantities.map((qty, idx) => (
+                  <span key={`${order.orderID}-dq-${idx}`} className="block">
+                    {qty}
+                  </span>
+                ))}
+              </span>
             </span>
           </div>
 

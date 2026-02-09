@@ -29,13 +29,14 @@ type OrdersTableProps = {
 
 type Order = {
   orderID: number;
+  orderIDs: number[];
   studentName: string;
   phoneNumber: string;
   university: string;
-  course: string;
+  courses: string[];
   status: string;
   statusID: number;
-  quantity: number;
+  quantities: number[];
 };
 
 const PAGE_SIZE = 10;
@@ -77,6 +78,10 @@ export default function OrdersTable({
             OrderID,
             Quantity,
             StatusID,
+            OrderDate,
+            Notes,
+            StudentID,
+            UniversityID,
             Students!inner(FullName, PhoneNumber),
             Universities!inner(UniversityName),
             Courses!inner(CourseName),
@@ -98,17 +103,47 @@ export default function OrdersTable({
           return;
         }
 
-        // Transform data to match expected format
-        const transformedOrders: Order[] = (data || []).map((order: any) => ({
-          orderID: order.OrderID,
-          studentName: order.Students?.FullName || "",
-          phoneNumber: order.Students?.PhoneNumber || "",
-          university: order.Universities?.UniversityName || "",
-          course: order.Courses?.CourseName || "",
-          status: order.OrderStatuses?.StatusName || "",
-          statusID: order.StatusID,
-          quantity: order.Quantity,
-        }));
+        const rawOrders = (data || []) as any[];
+        const groups = new Map<string, Order & { maxOrderID: number }>();
+
+        const getGroupKey = (order: any) => {
+          const note: string = order.Notes || "";
+          const tagMatch = note.match(/#G\d+/);
+          if (tagMatch) return tagMatch[0];
+          const orderMinute = String(order.OrderDate || "").slice(0, 16);
+          return `${order.StudentID}-${order.UniversityID}-${orderMinute}`;
+        };
+
+        rawOrders.forEach((order) => {
+          const key = getGroupKey(order);
+          const existing = groups.get(key);
+          const courseName = order.Courses?.CourseName || "";
+
+          if (!existing) {
+            groups.set(key, {
+              orderID: order.OrderID,
+              orderIDs: [order.OrderID],
+              studentName: order.Students?.FullName || "",
+              phoneNumber: order.Students?.PhoneNumber || "",
+              university: order.Universities?.UniversityName || "",
+              courses: courseName ? [courseName] : [],
+              status: order.OrderStatuses?.StatusName || "",
+              statusID: order.StatusID,
+              quantities: [order.Quantity],
+              maxOrderID: order.OrderID,
+            });
+            return;
+          }
+
+          existing.orderIDs.push(order.OrderID);
+          existing.maxOrderID = Math.max(existing.maxOrderID, order.OrderID);
+          if (courseName) existing.courses.push(courseName);
+          existing.quantities.push(order.Quantity);
+        });
+
+        const transformedOrders = Array.from(groups.values())
+          .sort((a, b) => b.maxOrderID - a.maxOrderID)
+          .map(({ maxOrderID: _maxOrderID, ...rest }) => rest);
 
         setOrders(transformedOrders);
       } catch (err) {
@@ -181,9 +216,19 @@ export default function OrdersTable({
                   <td>{order.studentName}</td>
                   <td>{order.phoneNumber}</td>
                   <td>{order.university}</td>
-                  <td>{order.course}</td>
+                  <td>
+                    <div className="space-y-1">
+                      {order.courses.map((course, idx) => (
+                        <div key={`${order.orderID}-c-${idx}`}>{course}</div>
+                      ))}
+                    </div>
+                  </td>
                   <td className="text-center font-semibold">
-                    {order.quantity}
+                    <div className="space-y-1">
+                      {order.quantities.map((qty, idx) => (
+                        <div key={`${order.orderID}-q-${idx}`}>{qty}</div>
+                      ))}
+                    </div>
                   </td>
                   <td>
                     <span

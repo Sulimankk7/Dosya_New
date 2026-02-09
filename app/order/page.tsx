@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -20,7 +20,9 @@ function OrderForm() {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [cartItems, setCartItems] = useState<Array<{ courseId: number; quantity: number }>>([]);
+  const [cartUniversityId, setCartUniversityId] = useState<number | null>(null);
 
   // Data from Supabase
   const [universities, setUniversities] = useState<University[]>([]);
@@ -63,6 +65,60 @@ function OrderForm() {
     return courses.filter((c) => c.UniversityID === Number(universityId));
   }, [universityId, courses]);
 
+  const selectedUniversity = universities.find((u) => u.UniversityID === Number(universityId));
+  const selectedCourse = courses.find((c) => c.CourseID === Number(courseId));
+  const cartUniversity = universities.find((u) => u.UniversityID === cartUniversityId);
+
+  const addToCart = () => {
+    if (!universityId || !courseId) {
+      setError('يرجى اختيار الجامعة والمادة');
+      return;
+    }
+
+    const uniId = Number(universityId);
+    if (cartUniversityId && cartUniversityId !== uniId) {
+      setError('لا يمكن اختيار أكثر من جامعة في سلة واحدة');
+      return;
+    }
+
+    if (!selectedCourse) {
+      setError('المادة غير موجودة');
+      return;
+    }
+
+    setError('');
+    setCartUniversityId(uniId);
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.courseId === selectedCourse.CourseID);
+      if (existing) {
+        return prev.map((item) =>
+          item.courseId === selectedCourse.CourseID
+            ? { ...item, quantity: item.quantity + Math.max(1, quantity) }
+            : item
+        );
+      }
+      return [...prev, { courseId: selectedCourse.CourseID, quantity: Math.max(1, quantity) }];
+    });
+
+    setCourseId('');
+    setQuantity(1);
+  };
+
+  const updateCartItemQuantity = (courseId: number, nextQty: number) => {
+    if (nextQty < 1) return;
+    setCartItems((prev) =>
+      prev.map((item) => (item.courseId === courseId ? { ...item, quantity: nextQty } : item))
+    );
+  };
+
+  const removeCartItem = (courseId: number) => {
+    setCartItems((prev) => {
+      const next = prev.filter((item) => item.courseId !== courseId);
+      if (next.length === 0) setCartUniversityId(null);
+      return next;
+    });
+  };
+
   /* =====================================================
      Submit order to Supabase
   ===================================================== */
@@ -71,10 +127,24 @@ function OrderForm() {
 
     if (isSubmitting) return;
 
+    if (cartItems.length === 0) {
+      setError('يرجى إضافة مواد إلى السلة');
+      return;
+    }
+
+    const uniId = cartUniversityId;
+    if (!uniId) {
+      setError('يرجى إضافة مواد إلى السلة');
+      return;
+    }
+
     setIsSubmitting(true);
-    setError("");
+    setError('');
 
     try {
+      const groupTag = `#G${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      const mergedNotes = notes ? `${notes}\n${groupTag}` : groupTag;
+
       // 1. Create student first
       const { data: studentData, error: studentError } = await supabase
         .from('Students')
@@ -87,39 +157,52 @@ function OrderForm() {
 
       if (studentError) throw studentError;
 
-      // 2. Create order with student reference
-      const { data: orderData, error: orderError } = await supabase
-        .from('Orders')
-        .insert({
-          StudentID: studentData.StudentID,
-          UniversityID: Number(universityId),
-          CourseID: Number(courseId),
-          Quantity: quantity,
-          DeliveryMethodID: 1, // Default delivery method
-          StatusID: 1, // Default: pending
-          Notes: notes || null,
-        })
-        .select('OrderID')
-        .single();
+      // 2. Create orders for all cart items
+      const orderResults = await Promise.all(
+        cartItems.map(async (item) => {
+          const { data, error: orderError } = await supabase
+            .from('Orders')
+            .insert({
+              StudentID: studentData.StudentID,
+              UniversityID: uniId,
+              CourseID: item.courseId,
+              Quantity: item.quantity,
+              DeliveryMethodID: 1, // Default delivery method
+              StatusID: 1, // Default: pending
+              Notes: mergedNotes,
+            })
+            .select('OrderID')
+            .single();
 
-      if (orderError) throw orderError;
+          if (orderError) throw orderError;
+          return data;
+        })
+      );
 
       // 3. Send Telegram notification
-      const selectedUni = universities.find(u => u.UniversityID === Number(universityId));
-      const selectedCrs = courses.find(c => c.CourseID === Number(courseId));
+      const courseSummary = cartItems
+        .map((item) => {
+          const course = courses.find((c) => c.CourseID === item.courseId);
+          const name = course?.CourseName || `Course #${item.courseId}`;
+          return `${name} x${item.quantity}`;
+        })
+        .join('، ');
+
+      const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      const uniName = cartUniversity?.UniversityName || selectedUniversity?.UniversityName || '';
 
       await sendTelegramNotification({
         fullName,
         phoneNumber,
-        universityName: selectedUni?.UniversityName || '',
-        courseName: selectedCrs?.CourseName || '',
-        quantity,
-        orderId: orderData.OrderID,
+        universityName: uniName,
+        courseName: courseSummary,
+        quantity: totalQuantity,
+        orderId: orderResults[0].OrderID,
       });
 
-      window.location.href = `/success?orderId=${orderData.OrderID}`;
+      window.location.href = `/success?orderId=${orderResults[0].OrderID}`;
     } catch {
-      setError("صار خطأ أثناء إرسال الطلب، حاول مرة أخرى");
+      setError('صار خطأ أثناء إرسال الطلب، حاول مرة أخرى');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,20 +211,20 @@ function OrderForm() {
   /* =====================================================
      ملخص الطلب (عرض فقط)
   ===================================================== */
-  const selectedUniversity = universities.find((u) => u.UniversityID === Number(universityId));
-  const selectedCourse = courses.find((c) => c.CourseID === Number(courseId));
-
-  const coursePrice = selectedCourse?.Price ?? 0;
+  const cartSubtotal = cartItems.reduce((sum, item) => {
+    const course = courses.find((c) => c.CourseID === item.courseId);
+    return sum + (course?.Price ?? 0) * item.quantity;
+  }, 0);
   const deliveryFee = (() => {
-    const id = selectedUniversity?.UniversityID;
+    const id = cartUniversityId;
 
-    if (id === 9) return 0; // ????? ?????
-    if (id === 10) return 2; // ????? ????? ???????
-    if (id === 11) return 1; // ????? ???? ???????
+    if (id === 9) return 0; // Jadara
+    if (id === 10) return 2; // Ajloun National
+    if (id === 11) return 1; // Irbid National
 
-    return selectedUniversity?.DeliveryFee ?? 0;
+    return cartUniversity?.DeliveryFee ?? 0;
   })();
-  const total = coursePrice * quantity + deliveryFee;
+  const total = cartSubtotal + deliveryFee;
 
   /* =====================================================
      UI
@@ -203,11 +286,16 @@ function OrderForm() {
             <select
               value={universityId}
               onChange={(e) => {
+                if (cartItems.length > 0 && cartUniversityId && Number(e.target.value) !== cartUniversityId) {
+                  setError('لا يمكن تغيير الجامعة والسلة غير فارغة');
+                  return;
+                }
                 setUniversityId(Number(e.target.value));
                 setCourseId('');
               }}
               required
-              className="clay-select"
+              disabled={cartItems.length > 0}
+              className="clay-select disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">اختر الجامعة</option>
               {universities.map((uni) => (
@@ -226,7 +314,6 @@ function OrderForm() {
             <select
               value={courseId}
               onChange={(e) => setCourseId(Number(e.target.value))}
-              required
               disabled={!universityId}
               className="clay-select disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -253,6 +340,15 @@ function OrderForm() {
             />
           </div>
 
+          <button
+            type="button"
+            onClick={addToCart}
+            disabled={!universityId || !courseId}
+            className="w-full py-3 rounded-xl font-bold text-base transition-all duration-200 cursor-pointer clay-btn-cta hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            إضافة إلى السلة
+          </button>
+
           {/* Notes */}
           <div>
             <label className="block mb-2 text-sm font-medium text-[var(--text)]">
@@ -277,7 +373,7 @@ function OrderForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || cartItems.length === 0}
             className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 cursor-pointer
               ${isSubmitting
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -300,8 +396,56 @@ function OrderForm() {
 
         </form>
 
+        {/* Cart */}
+        {cartItems.length > 0 && (
+          <div className="mt-8 p-5 rounded-xl bg-[var(--bg)] border-2 border-[var(--primary)]/20">
+            <h3 className="font-bold text-lg mb-4 text-[var(--primary)]">السلة</h3>
+            <div className="space-y-3 text-sm">
+              {cartItems.map((item) => {
+                const course = courses.find((c) => c.CourseID === item.courseId);
+                if (!course) return null;
+                return (
+                  <div key={item.courseId} className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="font-medium">{course.CourseName}</div>
+                      <div className="text-[var(--text-muted)]">{course.Price} د.أ</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateCartItemQuantity(item.courseId, item.quantity - 1)}
+                        className="px-3 py-1 rounded-lg border border-[var(--primary)]/30"
+                      >
+                        -
+                      </button>
+                      <span className="min-w-[24px] text-center">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateCartItemQuantity(item.courseId, item.quantity + 1)}
+                        className="px-3 py-1 rounded-lg border border-[var(--primary)]/30"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeCartItem(item.courseId)}
+                        className="px-3 py-1 rounded-lg border border-red-300 text-red-600"
+                      >
+                        إزالة
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-[var(--text-muted)] text-xs mt-3">
+              لتغيير الجامعة، قم بإفراغ السلة أولاً.
+            </div>
+          </div>
+        )}
+
         {/* Order Summary */}
-        {courseId && universityId && (
+        {cartItems.length > 0 && (
           <div className="mt-8 p-5 rounded-xl bg-[var(--bg)] border-2 border-[var(--primary)]/20">
             <h3 className="font-bold text-lg mb-4 text-[var(--primary)] flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -312,13 +456,8 @@ function OrderForm() {
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">سعر الدوسية</span>
-                <span className="font-medium">{coursePrice} د.أ</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">الكمية</span>
-                <span className="font-medium">{quantity}</span>
+                <span className="text-[var(--text-muted)]">إجمالي المواد</span>
+                <span className="font-medium">{cartSubtotal} د.أ</span>
               </div>
 
               <div className="flex justify-between">
@@ -358,4 +497,3 @@ export default function OrderPage() {
     </Suspense>
   );
 }
-
