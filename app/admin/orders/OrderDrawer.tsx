@@ -31,26 +31,6 @@ export default function OrderDrawer({
   const supabase = createClient();
   const [updating, setUpdating] = useState(false);
 
-  /* =========================
-     Phone Formatter (Jordan)
-     ========================= */
-  const formatToJordanNumber = (phone: string) => {
-    let cleaned = phone.replace(/\D/g, "");
-
-    // إذا بلش بـ 0 → نشيله ونضيف 962
-    if (cleaned.startsWith("0")) {
-      cleaned = "962" + cleaned.substring(1);
-    }
-
-    // إذا بلش بـ 7 → نضيف 962
-    if (cleaned.startsWith("7")) {
-      cleaned = "962" + cleaned;
-    }
-
-    // إذا بلش بـ 962 أصلاً → تمام
-    return cleaned;
-  };
-
   const updateStatus = async (statusId: number) => {
     setUpdating(true);
 
@@ -72,7 +52,16 @@ export default function OrderDrawer({
     setUpdating(false);
   };
 
-  const whatsappNumber = formatToJordanNumber(order.phoneNumber);
+  // 🔒 تنظيف وتحويل الرقم الأردني
+  const whatsappNumber = (() => {
+    const cleaned = order.phoneNumber.replace(/\D/g, "");
+
+    if (cleaned.startsWith("962")) return cleaned;
+    if (cleaned.startsWith("0")) return "962" + cleaned.substring(1);
+    if (cleaned.startsWith("7")) return "962" + cleaned;
+
+    return cleaned;
+  })();
 
   const whatsappMessage = encodeURIComponent(
     `السلام عليكم ${order.studentName}
@@ -110,6 +99,7 @@ export default function OrderDrawer({
 
           <div className="flex justify-between items-center border-b border-gray-200 dark:border-white/10 pb-2">
             <span className="text-gray-500">الهاتف</span>
+
             <div className="flex items-center gap-3">
               <span className="font-medium text-gray-900 dark:text-white">
                 {order.phoneNumber}
