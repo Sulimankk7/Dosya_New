@@ -348,7 +348,6 @@ function OrderForm() {
           >
             إضافة إلى السلة
           </button>
-
           {/* Notes */}
           <div>
             <label className="block mb-2 text-sm font-medium text-[var(--text)]">
@@ -369,6 +368,7 @@ function OrderForm() {
               {error}
             </div>
           )}
+<h6>تأكد من اضافة المواد الى السلة قبل ارسال الطلب</h6>
 
           {/* Submit Button */}
           <button
