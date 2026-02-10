@@ -128,13 +128,13 @@ function OrderForm() {
     if (isSubmitting) return;
 
     if (cartItems.length === 0) {
-      setError('يرجى إضافة مواد إلى السلة');
+      setError('السلة فارغة');
       return;
     }
 
     const uniId = cartUniversityId;
     if (!uniId) {
-      setError('يرجى إضافة مواد إلى السلة');
+      setError('السلة فارغة');
       return;
     }
 
@@ -373,7 +373,7 @@ function OrderForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting || cartItems.length === 0}
+            disabled={isSubmitting}
             className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 cursor-pointer
               ${isSubmitting
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

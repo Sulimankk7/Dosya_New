@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { University, Course } from '@/lib/database.types';
@@ -13,7 +13,76 @@ export default function CoursesSection() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch universities on mount
+  const universitiesById = useMemo(() => {
+    return new Map(universities.map((u) => [u.UniversityID, u.UniversityName]));
+  }, [universities]);
+
+  const normalize = (value: string) =>
+    value.toLowerCase().replace(/\s+/g, '');
+
+  const getPdfInfo = (course: Course) => {
+    const universityName = universitiesById.get(course.UniversityID) || '';
+    const uni = normalize(universityName);
+    const courseName = normalize(course.CourseName);
+
+    const isJadara = uni.includes('جدارا');
+    const isAjloun = uni.includes('عجلون');
+    const isIrbid = uni.includes('اربد') || uni.includes('إربد');
+
+    const isProg1 =
+      courseName.includes('برمجة1') ||
+      courseName.includes('البرمجة1') ||
+      courseName.includes('برمجه1');
+
+    const isProg2 =
+      courseName.includes('برمجة2') ||
+      courseName.includes('البرمجة2') ||
+      courseName.includes('برمجه2');
+
+    const isCpp =
+      courseName.includes('c++') ||
+      courseName.includes('cplusplus') ||
+      courseName.includes('سي++') ||
+      courseName.includes('سيبلسبلس');
+
+    const isSelectedLang =
+      courseName.includes('بلغةمختاره') ||
+      courseName.includes('بلغةمختارة') ||
+      courseName.includes('لغةمختاره') ||
+      courseName.includes('لغةمختارة');
+
+    // جامعة جدارا
+    if (isJadara && (isProg1 || isProg2)) {
+      return {
+        available: true,
+        href: isProg1
+          ? '/pdfs/jadara-programming-1.pdf'
+          : '/pdfs/jadara-programming-2.pdf',
+      };
+    }
+
+    // جامعة عجلون الوطنية
+    if (isAjloun && isCpp) {
+      return {
+        available: true,
+        href: '/pdfs/ajloun-cpp.pdf',
+      };
+    }
+
+    // جامعة اربد الاهلية
+    if (isIrbid && (isSelectedLang || isCpp)) {
+      return {
+        available: true,
+        href: isSelectedLang
+          ? '/pdfs/irbid-selected-language.pdf'
+          : '/pdfs/irbid-cpp.pdf',
+      };
+    }
+
+    return { available: false, href: '' };
+  };
+
+  // Fetch universities
   useEffect(() => {
     const fetchUniversities = async () => {
       const { data } = await supabase
@@ -32,7 +101,7 @@ export default function CoursesSection() {
     fetchUniversities();
   }, []);
 
-  // Fetch courses when university changes
+  // Fetch courses
   useEffect(() => {
     if (!selectedUniversity) return;
 
@@ -56,15 +125,15 @@ export default function CoursesSection() {
     <section id="courses" className="py-24 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto clay-card px-6 py-12 sm:px-10 space-y-10">
 
-        {/* Header */}
         <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--text)]">
             الدوسيات المتاحة
           </h2>
-          <p className="text-[var(--text-muted)] mt-2">اختر جامعتك واطلب الدوسية</p>
+          <p className="text-[var(--text-muted)] mt-2">
+            اختر جامعتك واطلب الدوسية
+          </p>
         </div>
 
-        {/* University Selector */}
         <div className="flex justify-center">
           <select
             value={selectedUniversity ?? ''}
@@ -79,14 +148,9 @@ export default function CoursesSection() {
           </select>
         </div>
 
-        {/* Courses Grid */}
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="flex items-center gap-3 text-[var(--text-muted)]">
-              <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
               جاري تحميل الدوسيات...
             </div>
           </div>
@@ -96,43 +160,63 @@ export default function CoursesSection() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
-              <div
-                key={course.CourseID}
-                className="bg-[var(--bg)] rounded-xl p-6 border-2 border-[var(--primary)]/10 hover:border-[var(--primary)]/30 transition-all hover:shadow-lg flex flex-col justify-between cursor-pointer"
-              >
-                <div className="space-y-3">
-                  {/* Course Icon */}
-                  <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
+            {courses.map((course) => {
+              const pdfInfo = getPdfInfo(course);
+
+              return (
+                <div
+                  key={course.CourseID}
+                  className="bg-[var(--bg)] rounded-xl p-6 border-2 border-[var(--primary)]/10 hover:border-[var(--primary)]/30 transition-all hover:shadow-lg flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-[var(--text)]">
+                      {course.CourseName}
+                    </h3>
+
+                    <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                      {course.Description}
+                    </p>
+
+                    <p className="text-2xl font-bold text-[var(--primary)]">
+                      {course.Price}{' '}
+                      <span className="text-sm font-normal">د.أ</span>
+                    </p>
                   </div>
 
-                  {/* Course Name */}
-                  <h3 className="text-xl font-bold text-[var(--text)]">
-                    {course.CourseName}
-                  </h3>
+                  {/* Buttons */}
+                  <div className="mt-6 flex flex-col gap-3">
+                    {pdfInfo.available ? (
+                      <a
+                        href={pdfInfo.href}
+                        target="_blank"
+                        className="w-full text-center py-3 rounded-xl border-2 border-[var(--primary)] text-[var(--primary)] font-bold hover:bg-[var(--primary)] hover:text-white transition-all"
+                      >
+                        شوف المحتوى
+                      </a>
+                    ) : (
+                      <button
+                        disabled
+                        className="w-full py-3 rounded-xl bg-gray-200 text-gray-500 font-bold cursor-not-allowed"
+                      >
+                        رؤية 
+المحتوى غير متاحة
+                      </button>
+                    )}
 
-                  {/* Description */}
-                  <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-                    {course.Description}
-                  </p>
-
-                  {/* Price */}
-                  <p className="text-2xl font-bold text-[var(--primary)]">
-                    {course.Price} <span className="text-sm font-normal">د.أ</span>
-                  </p>
+                    <Link
+                      href={`/order?courseId=${course.CourseID}&universityId=${selectedUniversity}`}
+                      className="w-full text-center py-3 rounded-xl bg-[var(--primary)] text-white font-bold hover:bg-[var(--primary-dark)] transition-all"
+                    >
+                      اطلب الآن
+                    </Link>
+                  </div>
                 </div>
-
-                <Link
-                  href={`/order?courseId=${course.CourseID}&universityId=${selectedUniversity}`}
-                  className="mt-6 block w-full text-center py-3 rounded-xl bg-[var(--primary)] text-white font-bold hover:bg-[var(--primary-dark)] transition-all cursor-pointer"
-                >
-                  اطلب الآن
-                </Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
