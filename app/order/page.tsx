@@ -218,9 +218,8 @@ function OrderForm() {
   const deliveryFee = (() => {
     const id = cartUniversityId;
 
-    if (id === 9) return 0; // Jadara
-    if (id === 10) return 2; // Ajloun National
-    if (id === 11) return 1; // Irbid National
+    const deliveryFee = cartUniversity?.DeliveryFee ?? 0;
+
 
     return cartUniversity?.DeliveryFee ?? 0;
   })();
