@@ -35,7 +35,6 @@ export async function sendTelegramNotification(order: OrderNotification): Promis
 📞 الهاتف: ${order.phoneNumber}
 🏫 الجامعة: ${order.universityName}
 📘 المادة: ${order.courseName}
-📊 الكمية: ${order.quantity}
 🕒 الوقت: ${formattedDate}
 `;
 

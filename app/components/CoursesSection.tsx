@@ -28,6 +28,7 @@ export default function CoursesSection() {
     const isJadara = uni.includes('جدارا');
     const isAjloun = uni.includes('عجلون');
     const isIrbid = uni.includes('اربد') || uni.includes('إربد');
+    const isZaytuna = uni.includes('الزيتونه') || uni.includes('الزيتونة');
 
     const isProg1 =
       courseName.includes('برمجة1') ||
@@ -78,7 +79,14 @@ export default function CoursesSection() {
           : '/pdfs/irbid-cpp.pdf',
       };
     }
-
+    if (isZaytuna && (isProg1 || isProg2)) {
+      return {
+        available: true,
+        href: isProg1
+          ? '/pdfs/jadara-programming-1.pdf'
+          : '/pdfs/jadara-programming-2.pdf',
+      };
+    }
     return { available: false, href: '' };
   };
 

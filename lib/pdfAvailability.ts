@@ -10,6 +10,10 @@ export const pdfAvailability: Record<string, Record<string, boolean>> = {
     "البرمجة بلغة مختاره": true,
     "C++": true,
   },
+  "جامعة الزيتونة الأردنية": {
+    "برمجة 1": true,
+    "برمجة 2": true,
+  },
 };
 
 export function isPdfAvailable(university: string, course: string) {
